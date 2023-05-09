@@ -113,8 +113,7 @@ public class DocumentContentSynchronizer implements DocumentListener {
         DidChangeTextDocumentParams changeParamsToSend = new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(), events);
         changeParamsToSend.getTextDocument().setUri(fileUri.toString());
         changeParamsToSend.getTextDocument().setVersion(++version);
-        languageServerWrapper.getInitializedServer()
-                .thenAcceptAsync(ls -> ls.getTextDocumentService().didChange(changeParamsToSend));
+        languageServerWrapper.sendNotification(ls -> ls.getTextDocumentService().didChange(changeParamsToSend));
     }
 
     @Override

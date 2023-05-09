@@ -1,6 +1,8 @@
 package com.redhat.devtools.intellij.quarkus.lsp4ij;
 
 import com.redhat.devtools.intellij.quarkus.lsp4ij.server.StreamConnectionProvider;
+import com.redhat.devtools.intellij.quarkus.lsp4ij.settings.UserDefinedLanguageServerSettings;
+import com.redhat.devtools.intellij.quarkus.lsp4ij.settings.ServerTrace;
 import org.eclipse.lsp4j.jsonrpc.messages.Message;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.slf4j.Logger;
@@ -27,8 +29,8 @@ public class LoggingStreamConnectionProviderProxy implements StreamConnectionPro
     private InputStream errorStream;
     private final String id;
     private File logFile;
-    private boolean logToFile = true;
-    private boolean logToConsole = false;
+    private boolean logToFile = false;
+    private boolean logToConsole = true;
 
 
     /**
@@ -38,7 +40,12 @@ public class LoggingStreamConnectionProviderProxy implements StreamConnectionPro
      * @return If connections should be logged
      */
     public static boolean shouldLog(String serverId) {
-        return Boolean.getBoolean("com.redhat.devtools.intellij.quarkus.trace");
+        UserDefinedLanguageServerSettings.LanguageServerDefinitionSettings settings = UserDefinedLanguageServerSettings.getInstance().getLanguageServerSettings(serverId);
+        if (settings == null) {
+            return false;
+        }
+        ServerTrace serverTrace = settings.getServerTrace();
+        return serverTrace != null && serverTrace != ServerTrace.off;
     }
 
     public LoggingStreamConnectionProviderProxy(StreamConnectionProvider provider, String serverId) {
@@ -165,6 +172,7 @@ public class LoggingStreamConnectionProviderProxy implements StreamConnectionPro
     }
 
     private void logToConsole(String string) {
+        // LSPConsoleToolWindow
         System.out.println(string);
     }
 
