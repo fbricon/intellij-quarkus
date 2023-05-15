@@ -17,6 +17,8 @@ import com.redhat.devtools.intellij.quarkus.lsp4ij.LanguageServerWrapper;
 import com.redhat.devtools.intellij.quarkus.lsp4ij.LanguageServersRegistry;
 import com.redhat.devtools.intellij.quarkus.lsp4ij.lifecycle.LanguageServerLifecycleListener;
 import com.redhat.devtools.intellij.quarkus.lsp4ij.lifecycle.LanguageServerLifecycleManager;
+import com.redhat.devtools.intellij.quarkus.lsp4ij.settings.ServerTrace;
+import com.redhat.devtools.intellij.quarkus.lsp4ij.settings.UserDefinedLanguageServerSettings;
 import org.eclipse.lsp4j.jsonrpc.messages.Message;
 import org.eclipse.lsp4j.jsonrpc.messages.NotificationMessage;
 import org.eclipse.lsp4j.jsonrpc.messages.RequestMessage;
@@ -26,6 +28,9 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.redhat.devtools.intellij.quarkus.lsp4ij.utils.UIHelper.executeInUI;
 
@@ -57,9 +62,11 @@ public class LanguageServerExplorer extends SimpleToolWindowPanel {
             public void handleStartingProcess(LanguageServerWrapper languageServer) {
                 executeInUI(() -> {
                     LanguageServerTreeNode node = findLanguageServerTreeNode(languageServer);
+                    if (node == null) {
+                        return;
+                    }
                     var processTreeNode = new LanguageServerProcessTreeNode(languageServer);
                     node.add(processTreeNode);
-
                     ((DefaultTreeModel)tree.getModel()).reload(node);
 
                     final TreePath treePath = new TreePath(processTreeNode.getPath());
@@ -74,9 +81,11 @@ public class LanguageServerExplorer extends SimpleToolWindowPanel {
             public void handleStartedProcess(LanguageServerWrapper languageServer, Throwable exception) {
                 executeInUI(() -> {
                     LanguageServerTreeNode node = findLanguageServerTreeNode(languageServer);
-                    LanguageServerProcessTreeNode process = node.getActiveProcessTreeNode();
-                    process.setUserObject("started process");
-                    ((DefaultTreeModel)tree.getModel()).reload(process);
+                    if (node != null) {
+                        LanguageServerProcessTreeNode process = node.getActiveProcessTreeNode();
+                        process.setUserObject("started process");
+                        ((DefaultTreeModel)tree.getModel()).reload(process);
+                    }
                 });
             }
 
@@ -84,32 +93,49 @@ public class LanguageServerExplorer extends SimpleToolWindowPanel {
             public void handleStartedLanguageServer(LanguageServerWrapper languageServer, Throwable exception) {
                 executeInUI(() -> {
                     LanguageServerTreeNode node = findLanguageServerTreeNode(languageServer);
-                    LanguageServerProcessTreeNode process = node.getActiveProcessTreeNode();
-                    process.setUserObject("started");
-                    ((DefaultTreeModel)tree.getModel()).reload(process);
+                    if (node != null) {
+                        LanguageServerProcessTreeNode process = node.getActiveProcessTreeNode();
+                        process.setUserObject("started");
+                        ((DefaultTreeModel)tree.getModel()).reload(process);
+                    }
+
                 });
             }
 
+            private final Map<String, String> methods = new HashMap<>(10);
+
             @Override
             public void handleLSPMessage(Message message, LanguageServerWrapper languageServer) {
+                UserDefinedLanguageServerSettings.LanguageServerDefinitionSettings settings = UserDefinedLanguageServerSettings.getInstance().getLanguageServerSettings(languageServer.serverDefinition.id);
+                ServerTrace traceLevel = settings.getServerTrace();
+                if (ServerTrace.off.equals(traceLevel)) {
+                    return;
+                }
                 StringBuilder formattedMessage = new StringBuilder("[Trace]");
                 if (message instanceof RequestMessage) {
                     // [Trace - 12:27:33 AM] Sending request 'initialize - (0)'.
                     //  Params: {
-                    formattedMessage.append(" Sending request '" + ((RequestMessage) message).getMethod() + " - (" + ((RequestMessage) message).getId() + ")'.");
+                    String id = ((RequestMessage) message).getId();
+                    String method = ((RequestMessage) message).getMethod();
+                    methods.put(id, method);
+                    formattedMessage.append(" Sending request '").append(method).append(" - (").append(id).append(")'.");
                     formattedMessage.append("\n");
                 } else if (message instanceof ResponseMessage) {
                     // [Trace - 12:27:35 AM] Received response 'initialize - (0)' in 1921ms.
-                    formattedMessage.append(" Received response '" + "" + " - (" + ((ResponseMessage) message).getId() + ")'.");
+                    String id = ((ResponseMessage) message).getId();
+                    String method = methods.remove(id);
+                    formattedMessage.append(" Received response '").append(method == null?"<unknown>":method).append(" - (").append(id).append(")'.");
                     formattedMessage.append("\n");
                 } else if (message instanceof NotificationMessage) {
                     // [Trace - 12:27:35 AM] Sending notification 'initialized'.
                     // Params: {}
-                    formattedMessage.append(" Sending notification '" + ((NotificationMessage) message).getMethod() + "'.");
+                    formattedMessage.append(" Sending notification '").append(((NotificationMessage) message).getMethod()).append("'.");
                     formattedMessage.append("\n");
                 }
-                formattedMessage.append(message.toString());
-                formattedMessage.append("\n");
+                if (ServerTrace.verbose.equals(traceLevel)) {
+                    formattedMessage.append(message.toString());
+                    formattedMessage.append("\n");
+                }
                 formattedMessage.append("\n");
 
                 executeInUI(() -> {
@@ -121,9 +147,11 @@ public class LanguageServerExplorer extends SimpleToolWindowPanel {
             public void handleStoppingLanguageServer(LanguageServerWrapper languageServer) {
                 executeInUI(() -> {
                     LanguageServerTreeNode node = findLanguageServerTreeNode(languageServer);
-                    LanguageServerProcessTreeNode process = node.getActiveProcessTreeNode();
-                    process.setUserObject("stopping...");
-                    ((DefaultTreeModel)tree.getModel()).reload(process);
+                    if (node != null) {
+                        LanguageServerProcessTreeNode process = node.getActiveProcessTreeNode();
+                        process.setUserObject("stopping...");
+                        ((DefaultTreeModel)tree.getModel()).reload(process);
+                    }
                 });
             }
 
@@ -131,9 +159,11 @@ public class LanguageServerExplorer extends SimpleToolWindowPanel {
             public void handleStoppedLanguageServer(LanguageServerWrapper languageServer, Throwable exception) {
                 executeInUI(() -> {
                     LanguageServerTreeNode node = findLanguageServerTreeNode(languageServer);
-                    LanguageServerProcessTreeNode process = node.getActiveProcessTreeNode();
-                    process.setUserObject("stopped");
-                    ((DefaultTreeModel)tree.getModel()).reload(process);
+                    if (node != null) {
+                        LanguageServerProcessTreeNode process = node.getActiveProcessTreeNode();
+                        process.setUserObject("stopped");
+                        ((DefaultTreeModel)tree.getModel()).reload(process);
+                    }
                 });
             }
         };
@@ -152,6 +182,9 @@ public class LanguageServerExplorer extends SimpleToolWindowPanel {
 
     private void showMessage(LanguageServerWrapper languageServer, String message) {
         LanguageServerTreeNode node = findLanguageServerTreeNode(languageServer);
+        if (node == null) {
+            return;
+        }
         var processTreeNode = node.getActiveProcessTreeNode();
         if (processTreeNode == null) {
             processTreeNode = new LanguageServerProcessTreeNode(languageServer);
@@ -189,7 +222,7 @@ public class LanguageServerExplorer extends SimpleToolWindowPanel {
         tree.addTreeSelectionListener(l -> {
             TreePath selectionPath = tree.getSelectionPath();
             Object selectedItem = selectionPath != null ? selectionPath.getLastPathComponent() : null;
-            if (selectedItem != null && selectedItem instanceof LanguageServerProcessTreeNode) {
+            if (selectedItem instanceof LanguageServerProcessTreeNode) {
                 LanguageServerProcessTreeNode node = (LanguageServerProcessTreeNode) selectedItem;
                 onLanguageServerSelected(node);
             } else {
