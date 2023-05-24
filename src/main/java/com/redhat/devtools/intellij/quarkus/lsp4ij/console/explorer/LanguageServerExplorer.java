@@ -31,6 +31,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.util.Comparator;
 
 /**
  * Language server explorer which shows language servers and their process.
@@ -81,10 +82,11 @@ public class LanguageServerExplorer extends SimpleToolWindowPanel implements Dis
         Tree tree = new Tree(top);
         tree.setRootVisible(false);
 
-        // Fill tree will all language server definitions
-        LanguageServersRegistry.getInstance().getAllDefinitions()
-                .forEach(serverDefinition -> top.add(new LanguageServerTreeNode(serverDefinition)));
-
+        // Fill tree will all language server definitions, ordered alphabetically
+        LanguageServersRegistry.getInstance().getAllDefinitions().stream()
+                .sorted(Comparator.comparing(LanguageServersRegistry.LanguageServerDefinition::getDisplayName))
+                .map(LanguageServerTreeNode::new)
+                .forEach(top::add);
         tree.setCellRenderer(new LanguageServerTreeRenderer());
 
         tree.addTreeSelectionListener(l -> {
