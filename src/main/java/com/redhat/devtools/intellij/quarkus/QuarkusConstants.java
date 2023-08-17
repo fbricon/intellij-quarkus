@@ -12,6 +12,7 @@ package com.redhat.devtools.intellij.quarkus;
 
 import com.intellij.openapi.util.Key;
 import com.redhat.devtools.intellij.quarkus.module.QuarkusExtensionsModel;
+import com.redhat.devtools.intellij.quarkus.settings.UserDefinedQuarkusSettings;
 import com.redhat.devtools.intellij.quarkus.tool.ToolDelegate;
 
 public class QuarkusConstants {
@@ -109,12 +110,8 @@ public class QuarkusConstants {
     public static final String CODE_QUARKUS_IO_CLIENT_NAME_HEADER_VALUE = "IntelliJ Quarkus Tools";
     public static final String CODE_QUARKUS_IO_CLIENT_CONTACT_EMAIL_HEADER_NAME = "Client-Contact-Email";
     public static final String CODE_QUARKUS_IO_CLIENT_CONTACT_EMAIL_HEADER_VALUE = "tools@jboss.org";
-
-    public static final String QUARKUS_CODE_URL_PROPERTY_NAME = "com.redhat.devtools.intellij.quarkus.code.url";
     public static final String QUARKUS_CODE_URL_PRODUCTION = "https://code.quarkus.io";
     public static final String QUARKUS_CODE_URL_TEST = "https://stage.code.quarkus.io";
-    public static final String QUARKUS_CODE_URL = System.getProperty(QUARKUS_CODE_URL_PROPERTY_NAME, QUARKUS_CODE_URL_PRODUCTION);
-
     public static final String QUARKUS_RUNTIME_CLASS_NAME = "io.quarkus.runtime.LaunchMode";
     public static final String QUARKUS_RUN_CONTEXT_KEY = QuarkusConstants.class.getName() + ".quarkusContext";
 }

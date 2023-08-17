@@ -27,23 +27,20 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 
-import static com.redhat.devtools.intellij.quarkus.QuarkusConstants.QUARKUS_CODE_URL;
-import static com.redhat.devtools.intellij.quarkus.QuarkusConstants.QUARKUS_CODE_URL_PROPERTY_NAME;
 import static com.redhat.devtools.intellij.quarkus.QuarkusConstants.QUARKUS_CODE_URL_TEST;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class QuarkusModelRegistryTest  {
     private final QuarkusModelRegistry registry = QuarkusModelRegistry.INSTANCE;
     private static CodeInsightTestFixture myFixture;
+
+    private static final String QUARKUS_CODE_URL = QUARKUS_CODE_URL_TEST;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @BeforeClass
     public static void init() throws Exception {
-        System.setProperty(QUARKUS_CODE_URL_PROPERTY_NAME, QUARKUS_CODE_URL_TEST);
         IdeaTestFixtureFactory factory = IdeaTestFixtureFactory.getFixtureFactory();
         TestFixtureBuilder<IdeaProjectTestFixture> fixtureBuilder = factory.createLightFixtureBuilder(QuarkusModelRegistryTest.class.getName());
         IdeaProjectTestFixture fixture = fixtureBuilder.getFixture();
@@ -62,7 +59,7 @@ public class QuarkusModelRegistryTest  {
 
     @Test
     public void checkThatModelCanLoadWithCodeQuarkusIO() throws IOException {
-        assertNotNull(registry.load(QUARKUS_CODE_URL, new EmptyProgressIndicator()));
+        assertNotNull(registry.load(QUARKUS_CODE_URL_TEST, new EmptyProgressIndicator()));
     }
 
     @Test

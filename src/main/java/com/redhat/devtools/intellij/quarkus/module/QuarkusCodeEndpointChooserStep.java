@@ -29,6 +29,7 @@ import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 import com.redhat.devtools.intellij.quarkus.QuarkusConstants;
+import com.redhat.devtools.intellij.quarkus.settings.UserDefinedQuarkusSettings;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
@@ -38,8 +39,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.List;
-
-import static com.redhat.devtools.intellij.quarkus.QuarkusConstants.QUARKUS_CODE_URL;
 
 public class QuarkusCodeEndpointChooserStep extends ModuleWizardStep {
     private static final String LAST_ENDPOINT_URL = "quarkus.code.endpoint.url.last";
@@ -63,8 +62,11 @@ public class QuarkusCodeEndpointChooserStep extends ModuleWizardStep {
             }
         });
         this.wizardContext = wizardContext;
-        String lastServiceUrl = PropertiesComponent.getInstance().getValue(LAST_ENDPOINT_URL, QUARKUS_CODE_URL);
-        if (!lastServiceUrl.equals(QUARKUS_CODE_URL)) {
+
+        String defaultServiceUrl = UserDefinedQuarkusSettings.getInstance().getStarterApiUrl();
+
+        String lastServiceUrl = PropertiesComponent.getInstance().getValue(LAST_ENDPOINT_URL, defaultServiceUrl);
+        if (!lastServiceUrl.equals(defaultServiceUrl)) {
             this.endpointURL.setSelectedItem(lastServiceUrl);
             this.defaultRadioButton.setSelected(false);
             this.customRadioButton.setSelected(true);
@@ -73,7 +75,7 @@ public class QuarkusCodeEndpointChooserStep extends ModuleWizardStep {
         }
 
         List<String> history = this.endpointURL.getHistory();
-        history.remove(QUARKUS_CODE_URL);
+        history.remove(defaultServiceUrl);
         this.endpointURL.setHistory(history);
         this.updateCustomUrl();
     }
@@ -93,8 +95,9 @@ public class QuarkusCodeEndpointChooserStep extends ModuleWizardStep {
         builder.addComponent(new JBLabel("Choose Quarkus Code endpoint URL."));
         BorderLayoutPanel defaultPanel = JBUI.Panels.simplePanel(10, 0);
         defaultPanel.addToLeft(this.defaultRadioButton);
-        HyperlinkLabel label = new HyperlinkLabel(QUARKUS_CODE_URL);
-        label.setHyperlinkTarget(QUARKUS_CODE_URL);
+        String starterApiUrl = UserDefinedQuarkusSettings.getInstance().getStarterApiUrl();
+        HyperlinkLabel label = new HyperlinkLabel(starterApiUrl);
+        label.setHyperlinkTarget(starterApiUrl);
         defaultPanel.addToCenter(label);
         builder.addComponent(defaultPanel);
         BorderLayoutPanel customPanel = JBUI.Panels.simplePanel(10, 0);
@@ -138,7 +141,7 @@ public class QuarkusCodeEndpointChooserStep extends ModuleWizardStep {
     }
 
     public void updateDataModel() {
-        String endpointURL = this.customRadioButton.isSelected() ? this.endpointURL.getText() : QUARKUS_CODE_URL;
+        String endpointURL = this.customRadioButton.isSelected() ? this.endpointURL.getText() : UserDefinedQuarkusSettings.getInstance().getStarterApiUrl();
         if (!Comparing.strEqual(this.wizardContext.getUserData(QuarkusConstants.WIZARD_ENDPOINT_URL_KEY), endpointURL)) {
             this.endpointURL.addCurrentTextToHistory();
             this.wizardContext.putUserData(QuarkusConstants.WIZARD_ENDPOINT_URL_KEY, endpointURL);
