@@ -1,0 +1,41 @@
+name: Publish to Marketplace
+
+on:
+    schedule:
+      - cron: '*/2 * * * *'
+    workflow_dispatch:
+      inputs:
+        channel:
+          description: 'Publishing channel?'
+          required: true
+          type: choice
+          options:
+            - 'Release'
+            - 'Pre-release'
+          default: 'Pre-release'
+
+jobs:
+  should-build-change:
+      runs-on: ubuntu-latest
+      outputs:
+          gitChanged: ${{ steps.sha-check.outputs.gitChanged }}
+      steps:
+        - uses: actions/checkout@v3
+        - name: Check last change
+          id: sha-check
+          run: |
+            CURRENT_SHA=$(git rev-parse HEAD)
+            echo gitChanged="$([ "$CURRENT_SHA" = "$GITHUB_SHA" ] && echo "false" || echo "true")" >> $GITHUB_OUTPUT
+  build-extension-job:
+    needs: should-build-change
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name }} == 'workflow_dispatch' || ${{ needs.should-build-change.outputs.gitChanged }} == 'true'
+    steps:
+    - uses: actions/checkout@v3
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    - name: Build with Gradle
+      run: |
+        echo "Git changed:" ${{ needs.should-build-change.outputs.gitChanged }} 
+        echo "github event name:" ${{ github.event_name }}
+        echo "Building extension to " ${{inputs.channel}}
