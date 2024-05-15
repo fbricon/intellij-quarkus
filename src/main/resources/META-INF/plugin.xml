@@ -589,6 +589,9 @@
         <propertiesProvider
                 implementation="com.redhat.microprofile.psi.internal.quarkus.cache.properties.QuarkusCacheResultProvider"/>
 
+        <propertiesProvider
+                implementation="com.redhat.devtools.intellij.lsp4mp4ij.psi.core.SysEnvPropertiesProvider"/>
+
         <!-- Quarkus Scheduled annotation -->
         <javaASTValidator.validator
                 implementation="com.redhat.microprofile.psi.internal.quarkus.scheduler.java.QuarkusSchedulerASTVisitor"/>
